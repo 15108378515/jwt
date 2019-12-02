@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using JWT.Algorithms;
+
+using static JWT.Internal.EncodingHelper;
 
 namespace JWT
 {
@@ -15,11 +16,11 @@ namespace JWT
         private readonly IBase64UrlEncoder _urlEncoder;
 
         /// <summary>
-        /// Creates an instance of <see cref="JwtEncoder" />.
+        /// Creates an instance of <see cref="JwtEncoder" />
         /// </summary>
-        /// <param name="jsonSerializer">The Json Serializer.</param>
-        /// <param name="algorithm">The Jwt Algorithm.</param>
-        /// <param name="urlEncoder">The Base64 URL Encoder.</param>
+        /// <param name="jsonSerializer">The Json Serializer</param>
+        /// <param name="algorithm">The Jwt Algorithm</param>
+        /// <param name="urlEncoder">The Base64 URL Encoder</param>
         public JwtEncoder(IJwtAlgorithm algorithm, IJsonSerializer jsonSerializer, IBase64UrlEncoder urlEncoder)
         {
             _algorithm = algorithm;
@@ -28,24 +29,27 @@ namespace JWT
         }
 
         /// <inheritdoc />
-        public string Encode(object payload, string key) => Encode(null, payload, key != null ? GetBytes(key) : null);
+        public string Encode(object payload, string key) =>
+            Encode(null, payload, key is object ? GetBytes(key) : null);
 
         /// <inheritdoc />
-        public string Encode(object payload, byte[] key) => Encode(null, payload, key);
+        public string Encode(object payload, byte[] key) =>
+            Encode(null, payload, key);
 
         /// <inheritdoc />
-        public string Encode(IDictionary<string, object> extraHeaders, object payload, string key) => Encode(extraHeaders, payload, GetBytes(key));
+        public string Encode(IDictionary<string, object> extraHeaders, object payload, string key) =>
+            Encode(extraHeaders, payload, GetBytes(key));
 
         /// <inheritdoc />
         /// <exception cref="ArgumentNullException" />
         public string Encode(IDictionary<string, object> extraHeaders, object payload, byte[] key)
         {
-            if (payload == null)
+            if (payload is null)
                 throw new ArgumentNullException(nameof(payload));
 
             var segments = new List<string>(3);
 
-            var header = extraHeaders != null ? new Dictionary<string, object>(extraHeaders) : new Dictionary<string, object>();
+            var header = extraHeaders is null ? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(extraHeaders, StringComparer.OrdinalIgnoreCase);
             header.Add("typ", "JWT");
             header.Add("alg", _algorithm.Name);
 
@@ -63,7 +67,5 @@ namespace JWT
 
             return String.Join(".", segments.ToArray());
         }
-
-        private static byte[] GetBytes(string input) => Encoding.UTF8.GetBytes(input);
     }
 }
